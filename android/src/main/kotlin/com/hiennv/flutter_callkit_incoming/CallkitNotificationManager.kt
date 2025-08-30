@@ -629,7 +629,7 @@ class CallkitNotificationManager(
                 ).setBot(data.getBoolean(CallkitConstants.EXTRA_CALLKIT_IS_BOT, false)).build()
                 val callStyle = NotificationCompat.CallStyle.forOngoingCall(
                     person, getHangupPendingIntent(onGoingNotificationId, data)
-                )
+                ).setIsVideo(true)
                 callStyle.setVerificationText(
                     if (TextUtils.isEmpty(textCalling)) context.getString(
                         R.string.text_calling
