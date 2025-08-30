@@ -623,7 +623,7 @@ class CallkitNotificationManager(
                 smallIcon = R.drawable.ic_accept
             }
         }
-        notificationOngoingBuilder?.setSmallIcon(smallIcon)
+        notificationOngoingBuilder?.setSmallIcon(R.drawable.transparent)
 
         val isCustomNotification =
             data.getBoolean(CallkitConstants.EXTRA_CALLKIT_IS_CUSTOM_NOTIFICATION, false)
@@ -846,7 +846,7 @@ class CallkitNotificationManager(
                 onGoingNotificationId, data
             )
         )
-        val actionColor = data.getString(CallkitConstants.EXTRA_CALLKIT_ACTION_COLOR, "#4CAF50")
+        val actionColor = data.getString(CallkitConstants.EXTRA_CALLKIT_ACTION_COLOR, "#E8459E")
         try {
             notificationOngoingBuilder?.color = Color.parseColor(actionColor)
         } catch (_: Exception) {
@@ -953,7 +953,11 @@ class CallkitNotificationManager(
                     NOTIFICATION_CHANNEL_ID_ONGOING,
                     ongoingCallChannelName,
                     NotificationManager.IMPORTANCE_LOW // disables notification popup for ongoing call
-                )
+                ).apply {
+                    description = "P2P Call with RaZe — I/O"
+                    lightColor = Color.parseColor("#E8459E")
+                    enableLights(true)
+                }
                 createNotificationChannel(channelOngoingCall)
             }
         }
