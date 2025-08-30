@@ -711,13 +711,47 @@ class CallkitNotificationManager(
                     R.id.llHangup, if (isShowHangup) View.VISIBLE else View.GONE
                 )
 
-
                 val textHangup =
                     data.getString(CallkitConstants.EXTRA_CALLKIT_CALLING_HANG_UP_TEXT, "")
                 notificationOngoingViews?.setTextViewText(
                     R.id.tvHangUp,
                     if (TextUtils.isEmpty(textHangup)) context.getString(R.string.text_hang_up) else textHangup
                 )
+
+                // --- START: add mic button wiring and background color support ---
+                try {
+                    // set background color if provided (AndroidParams.backgroundColor)
+                    val androidBundle = data.getBundle(CallkitConstants.EXTRA_CALLKIT_ANDROID)
+                    val bgColorHex = androidBundle?.getString(CallkitConstants.EXTRA_CALLKIT_BACKGROUND_COLOR)
+                        ?: data.getString(CallkitConstants.EXTRA_CALLKIT_BACKGROUND_COLOR, null)
+                    val bgColorString = if (!bgColorHex.isNullOrEmpty()) bgColorHex else "#E8459E" // fallback to provided hot-pink
+                    try {
+                        val colorInt = Color.parseColor(bgColorString)
+                        notificationOngoingViews?.setInt(R.id.rootLayout, "setBackgroundColor", colorInt)
+                        notificationOngoingSmallViews?.setInt(R.id.rootLayout, "setBackgroundColor", colorInt)
+                    } catch (ex: Exception) {
+                        // ignore parse errors
+                    }
+
+                    // PendingIntent for toggle mute
+                    val toggleIntent = CallkitIncomingBroadcastReceiver.getIntent(context, CallkitConstants.ACTION_CALL_TOGGLE_MUTE, data)
+                    val togglePending = PendingIntent.getBroadcast(context, onGoingNotificationId + 1000, toggleIntent, getFlagPendingIntent())
+                    notificationOngoingViews?.setOnClickPendingIntent(R.id.ivMic, togglePending)
+                    notificationOngoingSmallViews?.setOnClickPendingIntent(R.id.ivMic, togglePending)
+
+                    // Set mic icon based on persisted mute state (SharedPreferences)
+                    val callId = data.getString(CallkitConstants.EXTRA_CALLKIT_CALLING_ID, data.getString(CallkitConstants.EXTRA_CALLKIT_ID, "callkit_incoming"))
+                    val prefs = context.getSharedPreferences("CallKitPrefs", Context.MODE_PRIVATE)
+                    val isMuted = prefs.getBoolean("muted_${callId}", false)
+                    val micRes = if (isMuted) R.drawable.ic_mic_off_white else R.drawable.ic_mic_white
+                    notificationOngoingViews?.setImageViewResource(R.id.ivMic, micRes)
+                    notificationOngoingSmallViews?.setImageViewResource(R.id.ivMic, micRes)
+                } catch (e: Exception) {
+                    // don't crash for devices
+                    Log.e("CallkitNotificationManager", "Error wiring mic/background: ${e.message}", e)
+                }
+// --- END ---
+
 
                 var avatarUrl = data.getString(CallkitConstants.EXTRA_CALLKIT_AVATAR, "")
                 if (!avatarUrl.isNullOrEmpty()) {
@@ -965,6 +999,11 @@ class CallkitNotificationManager(
         return PendingIntent.getBroadcast(
             context, notificationId, endedIntent, getFlagPendingIntent()
         )
+    }
+
+    private fun getToggleMutePendingIntent(notificationId: Int, data: Bundle): PendingIntent {
+        val toggleIntent = CallkitIncomingBroadcastReceiver.getIntent(context, CallkitConstants.ACTION_CALL_TOGGLE_MUTE, data)
+        return PendingIntent.getBroadcast(context, notificationId + 1000, toggleIntent, getFlagPendingIntent())
     }
 
 

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -72,6 +73,23 @@
                 android:textAllCaps="false"
                 android:textColor="@android:color/white" />
 
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/llMicWrap"
+            android:layout_width="56dp"
+            android:layout_height="@dimen/base_margin_x4_8"
+            android:layout_marginStart="8dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:clickable="true"
+            android:focusable="true">
+            <ImageView
+                android:id="@+id/ivMic"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_mic_white"
+                android:tint="@android:color/white" />
         </LinearLayout>
 
         <LinearLayout

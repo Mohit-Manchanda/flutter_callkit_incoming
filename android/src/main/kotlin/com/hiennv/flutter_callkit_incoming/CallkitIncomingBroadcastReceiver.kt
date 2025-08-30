@@ -114,6 +114,30 @@ class CallkitIncomingBroadcastReceiver : BroadcastReceiver() {
                 }
             }
 
+            "${context.packageName}.${CallkitConstants.ACTION_CALL_TOGGLE_MUTE}" -> {
+                try {
+                    val callId = data.getString(CallkitConstants.EXTRA_CALLKIT_CALLING_ID,
+                        data.getString(CallkitConstants.EXTRA_CALLKIT_ID, "callkit_incoming"))
+                    val prefs = context.getSharedPreferences("CallKitPrefs", Context.MODE_PRIVATE)
+                    val key = "muted_$callId"
+                    val currentlyMuted = prefs.getBoolean(key, false)
+                    val newMuted = !currentlyMuted
+                    prefs.edit().putBoolean(key, newMuted).apply()
+
+                    // Refresh ongoing notification UI so the mic icon updates
+                    callkitNotificationManager?.showOngoingCallNotification(data, true)
+
+                    // forward to Flutter
+                    val forwardMap = HashMap<String, Any?>()
+                    forwardMap["id"] = callId
+                    forwardMap["muted"] = newMuted
+                    FlutterCallkitIncomingPlugin.sendEvent(CallkitConstants.ACTION_CALL_TOGGLE_MUTE, forwardMap)
+                } catch (err: Exception) {
+                    Log.e(TAG, "Error toggling mute", err)
+                }
+            }
+
+
             "${context.packageName}.${CallkitConstants.ACTION_CALL_ACCEPT}" -> {
                 try {
                     // start service and show ongoing call when call is accepted
