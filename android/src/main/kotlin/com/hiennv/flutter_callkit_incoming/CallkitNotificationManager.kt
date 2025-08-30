@@ -615,15 +615,8 @@ class CallkitNotificationManager(
         notificationOngoingBuilder?.setSound(null)
 
         val typeCall = data.getInt(CallkitConstants.EXTRA_CALLKIT_TYPE, -1)
-        var smallIcon = context.applicationInfo.icon
-        if (typeCall > 0) {
-            smallIcon = R.drawable.ic_video
-        } else {
-            if (smallIcon >= 0) {
-                smallIcon = R.drawable.ic_accept
-            }
-        }
-        notificationOngoingBuilder?.setSmallIcon(R.drawable.transparent)
+        var smallIcon = R.drawable.ic_video
+        notificationOngoingBuilder?.setSmallIcon(smallIcon)
 
         val isCustomNotification =
             data.getBoolean(CallkitConstants.EXTRA_CALLKIT_IS_CUSTOM_NOTIFICATION, false)
@@ -643,7 +636,6 @@ class CallkitNotificationManager(
                     ) else textCalling
                 )
                 notificationOngoingBuilder?.setStyle(callStyle)
-
 
                 val isShowCallID =
                     data.getBoolean(CallkitConstants.EXTRA_CALLKIT_IS_SHOW_CALL_ID, false)
