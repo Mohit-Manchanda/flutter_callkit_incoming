@@ -636,6 +636,7 @@ class CallkitNotificationManager(
                     ) else textCalling
                 )
                 notificationOngoingBuilder?.setStyle(callStyle)
+                    ?.setSmallIcon(R.drawable.logo_notif)
 
                 val isShowCallID =
                     data.getBoolean(CallkitConstants.EXTRA_CALLKIT_IS_SHOW_CALL_ID, false)
