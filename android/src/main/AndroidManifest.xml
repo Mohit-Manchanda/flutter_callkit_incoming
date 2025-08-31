@@ -19,7 +19,9 @@
         android:name="${applicationId}.PERMISSION_CALL"
         android:protectionLevel="normal" />
 
-    <application>
+    <application
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round">
 
         <activity
             android:name="com.hiennv.flutter_callkit_incoming.CallkitIncomingActivity"
@@ -73,6 +75,10 @@
                 <action android:name="android.telecom.ConnectionService" />
             </intent-filter>
         </service>
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/logo_notif" />
 
     </application>
 </manifest>
