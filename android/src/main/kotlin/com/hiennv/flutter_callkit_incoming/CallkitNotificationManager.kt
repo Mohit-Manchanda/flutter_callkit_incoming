@@ -963,7 +963,7 @@ class CallkitNotificationManager(
                 val channelOngoingCall = NotificationChannel(
                     NOTIFICATION_CHANNEL_ID_ONGOING,
                     ongoingCallChannelName,
-                    NotificationManager.IMPORTANCE_LOW // disables notification popup for ongoing call
+                    NotificationManager.IMPORTANCE_MAX // disables notification popup for ongoing call
                 ).apply {
                     description = "P2P Call with RaZe — I/O"
                     lightColor = Color.parseColor("#E8459E")
