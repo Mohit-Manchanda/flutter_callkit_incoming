@@ -772,7 +772,7 @@ class CallkitNotificationManager(
                 }
                 notificationOngoingBuilder?.setStyle(NotificationCompat.DecoratedCustomViewStyle())
                 notificationOngoingBuilder?.setCustomContentView(notificationOngoingSmallViews)
-                notificationOngoingBuilder?.setCustomBigContentView(notificationOngoingViews)
+                notificationOngoingBuilder?.setCustomBigContentView(notificationOngoingViews)?.setSmallIcon(R.drawable.logo_notif)
             }
         } else {
             notificationOngoingBuilder?.setContentTitle(
@@ -784,7 +784,8 @@ class CallkitNotificationManager(
                 data.getString(
                     CallkitConstants.EXTRA_CALLKIT_HANDLE, ""
                 )
-            )
+            )?.setSmallIcon(R.drawable.logo_notif)
+
             var avatarUrl = data.getString(CallkitConstants.EXTRA_CALLKIT_AVATAR, "")
             if (!avatarUrl.isNullOrEmpty()) {
                 if (!avatarUrl.startsWith("http://", true) && !avatarUrl.startsWith(
