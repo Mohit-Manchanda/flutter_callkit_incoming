@@ -615,8 +615,7 @@ class CallkitNotificationManager(
         notificationOngoingBuilder?.setSound(null)
 
         val typeCall = data.getInt(CallkitConstants.EXTRA_CALLKIT_TYPE, -1)
-        var smallIcon = R.drawable.ic_video
-        notificationOngoingBuilder?.setSmallIcon(smallIcon)
+        var smallIcon = resolveAppIconResource(context, "logo_notif", "ic_launcher")
 
         val isCustomNotification =
             data.getBoolean(CallkitConstants.EXTRA_CALLKIT_IS_CUSTOM_NOTIFICATION, false)
@@ -636,7 +635,7 @@ class CallkitNotificationManager(
                     ) else textCalling
                 )
                 notificationOngoingBuilder?.setStyle(callStyle)
-                    ?.setSmallIcon(R.drawable.logo_notif)
+                    ?.setSmallIcon(smallIcon)
 
                 val isShowCallID =
                     data.getBoolean(CallkitConstants.EXTRA_CALLKIT_IS_SHOW_CALL_ID, false)
@@ -850,6 +849,24 @@ class CallkitNotificationManager(
 
         return notification?.let { CallkitNotification(onGoingNotificationId, it) }
     }
+
+    // Resolve preferred icon name (first try logo_notif then fallback to ic_launcher mipmap)
+    fun resolveAppIconResource(context: Context, iconName: String, defaultMipmapName: String): Int {
+        // look in drawable first, then mipmap
+        val drawableId = context.resources.getIdentifier(iconName, "drawable", context.packageName)
+        if (drawableId != 0) return drawableId
+        val mipmapId = context.resources.getIdentifier(iconName, "mipmap", context.packageName)
+        if (mipmapId != 0) return mipmapId
+        // fallback to default launcher mipmap
+        val defaultId = context.resources.getIdentifier(defaultMipmapName, "mipmap", context.packageName)
+        if (defaultId != 0) return defaultId
+        // absolute fallback to application icon
+        return context.applicationInfo.icon
+    }
+
+    // usage: prefer "logo_notif" (or "ic_call" — whatever you put in your app resources)
+    val resolvedSmallIcon = resolveAppIconResource(context.applicationContext, "logo_notif", "ic_launcher")
+    notificationOngoingBuilder?.setSmallIcon(resolvedSmallIcon)
 
 
     fun clearIncomingNotification(data: Bundle, isAccepted: Boolean) {
