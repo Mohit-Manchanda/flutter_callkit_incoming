@@ -642,6 +642,27 @@ class CallkitNotificationManager(
                 notificationOngoingBuilder?.setStyle(callStyle)
                     ?.setSmallIcon(smallIcon)
 
+                // PendingIntent for toggle mute
+                val toggleIntent = CallkitIncomingBroadcastReceiver.getIntent(
+                    context,
+                    CallkitConstants.ACTION_CALL_TOGGLE_MUTE,
+                    data
+                )
+                val togglePending = PendingIntent.getBroadcast(
+                    context,
+                    onGoingNotificationId + 1000,
+                    toggleIntent,
+                    getFlagPendingIntent()
+                )
+
+                // 🔽 Add this mute button here
+                val muteAction: NotificationCompat.Action = NotificationCompat.Action.Builder(
+                    R.drawable.ic_mic_white, // or transparent icon if needed
+                    context.getString(R.string.text_mute), // or "Mute" directly
+                    togglePending
+                ).build()
+                notificationOngoingBuilder?.addAction(muteAction)
+
                 val isShowCallID =
                     data.getBoolean(CallkitConstants.EXTRA_CALLKIT_IS_SHOW_CALL_ID, false)
                 if (isShowCallID) {
