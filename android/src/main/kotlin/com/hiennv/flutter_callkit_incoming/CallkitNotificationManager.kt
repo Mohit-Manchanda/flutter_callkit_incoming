@@ -661,7 +661,7 @@ class CallkitNotificationManager(
                     context.getString(R.string.text_mute), // or "Mute" directly
                     togglePending
                 ).build()
-                notificationOngoingBuilder?.addAction(muteAction) m
+                notificationOngoingBuilder?.addAction(muteAction)
 
                 val isShowCallID =
                     data.getBoolean(CallkitConstants.EXTRA_CALLKIT_IS_SHOW_CALL_ID, false)
