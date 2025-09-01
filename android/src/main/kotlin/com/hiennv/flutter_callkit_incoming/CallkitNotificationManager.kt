@@ -567,6 +567,7 @@ class CallkitNotificationManager(
                 missedNotificationId, data
             )
         )
+
         val actionColor = data.getString(CallkitConstants.EXTRA_CALLKIT_ACTION_COLOR, "#4CAF50")
         try {
             notificationMissingBuilder?.color = Color.parseColor(actionColor)
