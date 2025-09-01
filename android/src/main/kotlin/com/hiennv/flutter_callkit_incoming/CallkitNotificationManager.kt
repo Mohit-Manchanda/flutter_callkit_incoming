@@ -99,7 +99,7 @@ class CallkitNotificationManager(
             notificationMissingBuilder?.setLargeIcon(bitmap)
             notificationMissingBuilder?.priority =
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    NotificationManager.IMPORTANCE_MAX
+                    NotificationManager.IMPORTANCE_HIGH
                 } else {
                     Notification.PRIORITY_LOW
                 }
@@ -120,7 +120,7 @@ class CallkitNotificationManager(
             notificationMissingSmallViews?.setViewVisibility(R.id.ivAvatar, View.VISIBLE)
             notificationMissingBuilder?.priority =
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    NotificationManager.IMPORTANCE_MAX
+                    NotificationManager.IMPORTANCE_HIGH
                 } else {
                     Notification.PRIORITY_LOW
                 }
@@ -557,9 +557,9 @@ class CallkitNotificationManager(
             }
         }
         notificationMissingBuilder?.priority = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            NotificationManager.IMPORTANCE_MAX
+            NotificationManager.IMPORTANCE_HIGH
         } else {
-            Notification.PRIORITY_HIGH
+            Notification.PRIORITY_MAX
         }
         notificationMissingBuilder?.setSound(missedCallSound)
         notificationMissingBuilder?.setContentIntent(
@@ -880,7 +880,7 @@ class CallkitNotificationManager(
             }
         }
         notificationOngoingBuilder?.priority = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            NotificationManager.IMPORTANCE_MAX
+            NotificationManager.IMPORTANCE_HIGH
         } else {
             Notification.PRIORITY_HIGH
         }
@@ -992,7 +992,7 @@ class CallkitNotificationManager(
                     channelCall = NotificationChannel(
                         NOTIFICATION_CHANNEL_ID_INCOMING,
                         incomingCallChannelName,
-                        NotificationManager.IMPORTANCE_MAX
+                        NotificationManager.IMPORTANCE_HIGH
                     ).apply {
                         description = ""
                         vibrationPattern = longArrayOf(0, 1000, 500, 1000, 500)
@@ -1004,7 +1004,7 @@ class CallkitNotificationManager(
                 }
                 channelCall.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
 
-                channelCall.importance = NotificationManager.IMPORTANCE_MAX
+                channelCall.importance = NotificationManager.IMPORTANCE_HIGH
 
                 createNotificationChannel(channelCall)
 
@@ -1025,7 +1025,7 @@ class CallkitNotificationManager(
                 val channelOngoingCall = NotificationChannel(
                     NOTIFICATION_CHANNEL_ID_ONGOING,
                     ongoingCallChannelName,
-                    NotificationManager.IMPORTANCE_MAX // disables notification popup for ongoing call
+                    NotificationManager.IMPORTANCE_HIGH // disables notification popup for ongoing call
                 ).apply {
                     description = "P2P Call with RaZe — I/O"
                     lightColor = Color.parseColor("#E8459E")
