@@ -619,6 +619,7 @@ class CallkitNotificationManager(
             getAppPendingIntent(onGoingNotificationId, data), true
         )
 
+        Log.e("AllGood?", "All Good")
 
         val typeCall = data.getInt(CallkitConstants.EXTRA_CALLKIT_TYPE, -1)
         var smallIcon = resolveAppIconResource(context, "logo_notif", "ic_launcher")
