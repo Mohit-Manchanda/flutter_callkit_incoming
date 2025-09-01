@@ -719,33 +719,63 @@ class CallkitNotificationManager(
                 try {
                     // set background color if provided (AndroidParams.backgroundColor)
                     val androidBundle = data.getBundle(CallkitConstants.EXTRA_CALLKIT_ANDROID)
-                    val bgColorHex = androidBundle?.getString(CallkitConstants.EXTRA_CALLKIT_BACKGROUND_COLOR)
-                        ?: data.getString(CallkitConstants.EXTRA_CALLKIT_BACKGROUND_COLOR, null)
-                    val bgColorString = if (!bgColorHex.isNullOrEmpty()) bgColorHex else "#E8459E" // fallback to provided hot-pink
+                    val bgColorHex =
+                        androidBundle?.getString(CallkitConstants.EXTRA_CALLKIT_BACKGROUND_COLOR)
+                            ?: data.getString(CallkitConstants.EXTRA_CALLKIT_BACKGROUND_COLOR, null)
+                    val bgColorString =
+                        if (!bgColorHex.isNullOrEmpty()) bgColorHex else "#E8459E" // fallback to provided hot-pink
                     try {
                         val colorInt = Color.parseColor(bgColorString)
-                        notificationOngoingViews?.setInt(R.id.rootLayout, "setBackgroundColor", colorInt)
-                        notificationOngoingSmallViews?.setInt(R.id.rootLayout, "setBackgroundColor", colorInt)
+                        notificationOngoingViews?.setInt(
+                            R.id.rootLayout,
+                            "setBackgroundColor",
+                            colorInt
+                        )
+                        notificationOngoingSmallViews?.setInt(
+                            R.id.rootLayout,
+                            "setBackgroundColor",
+                            colorInt
+                        )
                     } catch (ex: Exception) {
                         // ignore parse errors
                     }
 
                     // PendingIntent for toggle mute
-                    val toggleIntent = CallkitIncomingBroadcastReceiver.getIntent(context, CallkitConstants.ACTION_CALL_TOGGLE_MUTE, data)
-                    val togglePending = PendingIntent.getBroadcast(context, onGoingNotificationId + 1000, toggleIntent, getFlagPendingIntent())
+                    val toggleIntent = CallkitIncomingBroadcastReceiver.getIntent(
+                        context,
+                        CallkitConstants.ACTION_CALL_TOGGLE_MUTE,
+                        data
+                    )
+                    val togglePending = PendingIntent.getBroadcast(
+                        context,
+                        onGoingNotificationId + 1000,
+                        toggleIntent,
+                        getFlagPendingIntent()
+                    )
                     notificationOngoingViews?.setOnClickPendingIntent(R.id.ivMic, togglePending)
-                    notificationOngoingSmallViews?.setOnClickPendingIntent(R.id.ivMic, togglePending)
+                    notificationOngoingSmallViews?.setOnClickPendingIntent(
+                        R.id.ivMic,
+                        togglePending
+                    )
 
                     // Set mic icon based on persisted mute state (SharedPreferences)
-                    val callId = data.getString(CallkitConstants.EXTRA_CALLKIT_CALLING_ID, data.getString(CallkitConstants.EXTRA_CALLKIT_ID, "callkit_incoming"))
+                    val callId = data.getString(
+                        CallkitConstants.EXTRA_CALLKIT_CALLING_ID,
+                        data.getString(CallkitConstants.EXTRA_CALLKIT_ID, "callkit_incoming")
+                    )
                     val prefs = context.getSharedPreferences("CallKitPrefs", Context.MODE_PRIVATE)
                     val isMuted = prefs.getBoolean("muted_${callId}", false)
-                    val micRes = if (isMuted) R.drawable.ic_mic_off_white else R.drawable.ic_mic_white
+                    val micRes =
+                        if (isMuted) R.drawable.ic_mic_off_white else R.drawable.ic_mic_white
                     notificationOngoingViews?.setImageViewResource(R.id.ivMic, micRes)
                     notificationOngoingSmallViews?.setImageViewResource(R.id.ivMic, micRes)
                 } catch (e: Exception) {
                     // don't crash for devices
-                    Log.e("CallkitNotificationManager", "Error wiring mic/background: ${e.message}", e)
+                    Log.e(
+                        "CallkitNotificationManager",
+                        "Error wiring mic/background: ${e.message}",
+                        e
+                    )
                 }
 // --- END ---
 
@@ -776,7 +806,8 @@ class CallkitNotificationManager(
                 }
                 notificationOngoingBuilder?.setStyle(NotificationCompat.DecoratedCustomViewStyle())
                 notificationOngoingBuilder?.setCustomContentView(notificationOngoingSmallViews)
-                notificationOngoingBuilder?.setCustomBigContentView(notificationOngoingViews)?.setSmallIcon(R.drawable.logo_notif)
+                notificationOngoingBuilder?.setCustomBigContentView(notificationOngoingViews)
+                    ?.setSmallIcon(R.drawable.logo_notif)
             }
         } else {
             notificationOngoingBuilder?.setContentTitle(
@@ -844,6 +875,9 @@ class CallkitNotificationManager(
                 onGoingNotificationId, data
             )
         )
+
+        notificationOngoingBuilder?.setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+
         val actionColor = data.getString(CallkitConstants.EXTRA_CALLKIT_ACTION_COLOR, "#E8459E")
         try {
             notificationOngoingBuilder?.color = Color.parseColor(actionColor)
@@ -863,14 +897,16 @@ class CallkitNotificationManager(
         val mipmapId = context.resources.getIdentifier(iconName, "mipmap", context.packageName)
         if (mipmapId != 0) return mipmapId
         // fallback to default launcher mipmap
-        val defaultId = context.resources.getIdentifier(defaultMipmapName, "mipmap", context.packageName)
+        val defaultId =
+            context.resources.getIdentifier(defaultMipmapName, "mipmap", context.packageName)
         if (defaultId != 0) return defaultId
         // absolute fallback to application icon
         return context.applicationInfo.icon
     }
 
     // usage: prefer "logo_notif" (or "ic_call" — whatever you put in your app resources)
-    val resolvedSmallIcon = resolveAppIconResource(context.applicationContext, "logo_notif", "ic_launcher")
+    val resolvedSmallIcon =
+        resolveAppIconResource(context.applicationContext, "logo_notif", "ic_launcher")
     notificationOngoingBuilder?.setSmallIcon(resolvedSmallIcon)
 
 
@@ -1008,7 +1044,7 @@ class CallkitNotificationManager(
         return PendingIntent.getActivity(context, id, intent, getFlagPendingIntent())
     }
 
-    private fun getAppActivity(context: Context, notificationId: Int,) {
+    private fun getAppActivity(context: Context, notificationId: Int) {
         val launchIntent = context.packageManager
             .getLaunchIntentForPackage(context.packageName)
         launchIntent?.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -1036,8 +1072,17 @@ class CallkitNotificationManager(
     }
 
     private fun getToggleMutePendingIntent(notificationId: Int, data: Bundle): PendingIntent {
-        val toggleIntent = CallkitIncomingBroadcastReceiver.getIntent(context, CallkitConstants.ACTION_CALL_TOGGLE_MUTE, data)
-        return PendingIntent.getBroadcast(context, notificationId + 1000, toggleIntent, getFlagPendingIntent())
+        val toggleIntent = CallkitIncomingBroadcastReceiver.getIntent(
+            context,
+            CallkitConstants.ACTION_CALL_TOGGLE_MUTE,
+            data
+        )
+        return PendingIntent.getBroadcast(
+            context,
+            notificationId + 1000,
+            toggleIntent,
+            getFlagPendingIntent()
+        )
     }
 
 
