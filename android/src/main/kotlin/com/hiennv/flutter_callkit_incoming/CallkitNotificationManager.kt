@@ -614,6 +614,11 @@ class CallkitNotificationManager(
         notificationOngoingBuilder?.setAutoCancel(false)
         notificationOngoingBuilder?.setSound(null)
 
+        notificationOngoingBuilder?.setFullScreenIntent(
+            getAppPendingIntent(onGoingNotificationId, data), true
+        )
+
+
         val typeCall = data.getInt(CallkitConstants.EXTRA_CALLKIT_TYPE, -1)
         var smallIcon = resolveAppIconResource(context, "logo_notif", "ic_launcher")
 
@@ -1001,6 +1006,20 @@ class CallkitNotificationManager(
     private fun getActivityPendingIntent(id: Int, data: Bundle): PendingIntent {
         val intent = CallkitIncomingActivity.getIntent(context, data)
         return PendingIntent.getActivity(context, id, intent, getFlagPendingIntent())
+    }
+
+    private fun getAppActivity(context: Context, notificationId: Int,) {
+        val launchIntent = context.packageManager
+            .getLaunchIntentForPackage(context.packageName)
+        launchIntent?.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+
+        val fullScreenPendingIntent = PendingIntent.getActivity(
+            context,
+            notificationId,
+            launchIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
     }
 
     private fun getAppPendingIntent(id: Int, data: Bundle): PendingIntent {
