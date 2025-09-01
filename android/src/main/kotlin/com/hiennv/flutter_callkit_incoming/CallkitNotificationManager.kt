@@ -99,7 +99,7 @@ class CallkitNotificationManager(
             notificationMissingBuilder?.setLargeIcon(bitmap)
             notificationMissingBuilder?.priority =
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    NotificationManager.IMPORTANCE_LOW
+                    NotificationManager.IMPORTANCE_MAX
                 } else {
                     Notification.PRIORITY_LOW
                 }
@@ -120,7 +120,7 @@ class CallkitNotificationManager(
             notificationMissingSmallViews?.setViewVisibility(R.id.ivAvatar, View.VISIBLE)
             notificationMissingBuilder?.priority =
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    NotificationManager.IMPORTANCE_LOW
+                    NotificationManager.IMPORTANCE_MAX
                 } else {
                     Notification.PRIORITY_LOW
                 }
@@ -557,7 +557,7 @@ class CallkitNotificationManager(
             }
         }
         notificationMissingBuilder?.priority = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            NotificationManager.IMPORTANCE_HIGH
+            NotificationManager.IMPORTANCE_MAX
         } else {
             Notification.PRIORITY_HIGH
         }
@@ -823,7 +823,7 @@ class CallkitNotificationManager(
             }
         }
         notificationOngoingBuilder?.priority = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            NotificationManager.IMPORTANCE_HIGH
+            NotificationManager.IMPORTANCE_MAX
         } else {
             Notification.PRIORITY_HIGH
         }
@@ -930,7 +930,7 @@ class CallkitNotificationManager(
                     channelCall = NotificationChannel(
                         NOTIFICATION_CHANNEL_ID_INCOMING,
                         incomingCallChannelName,
-                        NotificationManager.IMPORTANCE_HIGH
+                        NotificationManager.IMPORTANCE_MAX
                     ).apply {
                         description = ""
                         vibrationPattern = longArrayOf(0, 1000, 500, 1000, 500)
@@ -942,7 +942,7 @@ class CallkitNotificationManager(
                 }
                 channelCall.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
 
-                channelCall.importance = NotificationManager.IMPORTANCE_HIGH
+                channelCall.importance = NotificationManager.IMPORTANCE_MAX
 
                 createNotificationChannel(channelCall)
 
