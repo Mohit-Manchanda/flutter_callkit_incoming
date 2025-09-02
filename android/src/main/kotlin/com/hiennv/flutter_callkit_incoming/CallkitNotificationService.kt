@@ -61,6 +61,7 @@ class CallkitNotificationService : Service() {
                         FlutterCallkitIncomingPlugin.getInstance()?.getCallkitNotificationManager()
                             ?.createNotificationChanel(it)
                         showOngoingCallNotification(it)
+                        Log.e("AllGood?", "Noncsdkcb")
                     }else {
                         stopSelf()
                     }
@@ -72,6 +73,7 @@ class CallkitNotificationService : Service() {
                     callkitNotificationManager?.clearIncomingNotification(it, true)
                     if (it.getBoolean(CallkitConstants.EXTRA_CALLKIT_CALLING_SHOW, true)) {
                         showOngoingCallNotification(it)
+                        Log.e("AllGood?", "Nozz")
                     }else {
                         stopSelf()
                     }
@@ -82,6 +84,7 @@ class CallkitNotificationService : Service() {
 
     @SuppressLint("MissingPermission")
     private fun showOngoingCallNotification(bundle: Bundle) {
+        Log.e("AllGood?", "WHAT THE FUCK")
 
         val callkitNotification =
             this.callkitNotificationManager?.getOnGoingCallNotification(bundle, false)

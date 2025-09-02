@@ -1141,6 +1141,7 @@ class CallkitNotificationManager(
 
     @SuppressLint("MissingPermission")
     fun showOngoingCallNotification(data: Bundle, isConnected: Boolean?) {
+        Log.e("AllGood?", "Not here")
         val callkitNotification = getOnGoingCallNotification(data, isConnected)
         callkitNotification?.let {
             getNotificationManager().notify(
