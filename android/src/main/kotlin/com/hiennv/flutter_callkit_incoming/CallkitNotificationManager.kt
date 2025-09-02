@@ -585,6 +585,8 @@ class CallkitNotificationManager(
         data: Bundle, isConnected: Boolean? = false
     ): CallkitNotification? {
 
+        Log.e("AllGood?", "No")
+
         val isCallingNotificationShow =
             data.getBoolean(CallkitConstants.EXTRA_CALLKIT_CALLING_SHOW, true)
         if (!isCallingNotificationShow) return null
@@ -601,9 +603,9 @@ class CallkitNotificationManager(
         )
         notificationOngoingBuilder?.setChannelId(NOTIFICATION_CHANNEL_ID_ONGOING)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 notificationOngoingBuilder?.setCategory(Notification.CATEGORY_CALL)
-            }
+//            }
         }
         val textCalling = data.getString(CallkitConstants.EXTRA_CALLKIT_CALLING_SUBTITLE, "")
         notificationOngoingBuilder?.setSubText(
@@ -614,6 +616,8 @@ class CallkitNotificationManager(
         notificationOngoingBuilder?.setOngoing(true)
         notificationOngoingBuilder?.setAutoCancel(false)
         notificationOngoingBuilder?.setSound(null)
+
+        Log.e("AllGood?", "Not")
 
         notificationOngoingBuilder?.setFullScreenIntent(
             getAppPendingIntent(onGoingNotificationId, data), true
