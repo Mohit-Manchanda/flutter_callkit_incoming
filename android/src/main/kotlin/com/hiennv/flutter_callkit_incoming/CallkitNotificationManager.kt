@@ -27,6 +27,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
 import java.util.Date
+import android.util.Log
 
 
 class CallkitNotificationManager(
@@ -585,12 +586,6 @@ class CallkitNotificationManager(
         data: Bundle, isConnected: Boolean? = false
     ): CallkitNotification? {
 
-        Log.e("AllGood?", "No")
-
-        val isCallingNotificationShow =
-            data.getBoolean(CallkitConstants.EXTRA_CALLKIT_CALLING_SHOW, true)
-        if (!isCallingNotificationShow) return null
-
         val callingId = data.getString(
             CallkitConstants.EXTRA_CALLKIT_CALLING_ID,
             data.getString(CallkitConstants.EXTRA_CALLKIT_ID, "callkit_incoming")
@@ -604,9 +599,10 @@ class CallkitNotificationManager(
         notificationOngoingBuilder?.setChannelId(NOTIFICATION_CHANNEL_ID_ONGOING)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 //            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                notificationOngoingBuilder?.setCategory(Notification.CATEGORY_CALL)
+            notificationOngoingBuilder?.setCategory(Notification.CATEGORY_CALL)
 //            }
         }
+
         val textCalling = data.getString(CallkitConstants.EXTRA_CALLKIT_CALLING_SUBTITLE, "")
         notificationOngoingBuilder?.setSubText(
             if (TextUtils.isEmpty(textCalling)) context.getString(
@@ -617,36 +613,151 @@ class CallkitNotificationManager(
         notificationOngoingBuilder?.setAutoCancel(false)
         notificationOngoingBuilder?.setSound(null)
 
-        Log.e("AllGood?", "Not")
-
         notificationOngoingBuilder?.setFullScreenIntent(
             getAppPendingIntent(onGoingNotificationId, data), true
         )
-
-        Log.e("AllGood?", "All Good")
 
         val typeCall = data.getInt(CallkitConstants.EXTRA_CALLKIT_TYPE, -1)
         var smallIcon = resolveAppIconResource(context, "logo_notif", "ic_launcher")
 
         val isCustomNotification =
             data.getBoolean(CallkitConstants.EXTRA_CALLKIT_IS_CUSTOM_NOTIFICATION, false)
-        if (isCustomNotification) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
 
-                val caller = data.getString(CallkitConstants.EXTRA_CALLKIT_NAME_CALLER, "")
-                val person = Person.Builder().setName(caller).setImportant(
-                    data.getBoolean(CallkitConstants.EXTRA_CALLKIT_IS_IMPORTANT, true)
-                ).setBot(data.getBoolean(CallkitConstants.EXTRA_CALLKIT_IS_BOT, false)).build()
-                val callStyle = NotificationCompat.CallStyle.forOngoingCall(
-                    person, getHangupPendingIntent(onGoingNotificationId, data)
-                ).setIsVideo(true)
-                callStyle.setVerificationText(
-                    if (TextUtils.isEmpty(textCalling)) context.getString(
-                        R.string.text_calling
-                    ) else textCalling
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+
+            val caller = data.getString(CallkitConstants.EXTRA_CALLKIT_NAME_CALLER, "")
+            val person = Person.Builder().setName(caller).setImportant(
+                data.getBoolean(CallkitConstants.EXTRA_CALLKIT_IS_IMPORTANT, true)
+            ).setBot(data.getBoolean(CallkitConstants.EXTRA_CALLKIT_IS_BOT, false)).build()
+            val callStyle = NotificationCompat.CallStyle.forOngoingCall(
+                person, getHangupPendingIntent(onGoingNotificationId, data)
+            ).setIsVideo(true)
+            callStyle.setVerificationText(
+                if (TextUtils.isEmpty(textCalling)) context.getString(
+                    R.string.text_calling
+                ) else textCalling
+            )
+            notificationOngoingBuilder?.setStyle(callStyle)
+                ?.setSmallIcon(smallIcon)
+
+            // PendingIntent for toggle mute
+            val toggleIntent = CallkitIncomingBroadcastReceiver.getIntent(
+                context,
+                CallkitConstants.ACTION_CALL_TOGGLE_MUTE,
+                data
+            )
+            val togglePending = PendingIntent.getBroadcast(
+                context,
+                onGoingNotificationId + 1000,
+                toggleIntent,
+                getFlagPendingIntent()
+            )
+
+            // 🔽 Add this mute button here
+            val muteAction: NotificationCompat.Action = NotificationCompat.Action.Builder(
+                R.drawable.ic_mic_white, // or transparent icon if needed
+                context.getString(R.string.text_mute), // or "Mute" directly
+                togglePending
+            ).build()
+            notificationOngoingBuilder?.addAction(muteAction)
+
+            val isShowCallID =
+                data.getBoolean(CallkitConstants.EXTRA_CALLKIT_IS_SHOW_CALL_ID, false)
+            if (isShowCallID) {
+                notificationOngoingBuilder?.setContentText(
+                    data.getString(
+                        CallkitConstants.EXTRA_CALLKIT_HANDLE, ""
+                    )
                 )
-                notificationOngoingBuilder?.setStyle(callStyle)
-                    ?.setSmallIcon(smallIcon)
+            }
+            var avatarUrl = data.getString(CallkitConstants.EXTRA_CALLKIT_AVATAR, "")
+            if (!avatarUrl.isNullOrEmpty()) {
+                if (!avatarUrl.startsWith("http://", true) && !avatarUrl.startsWith(
+                        "https://",
+                        true
+                    )
+                ) {
+                    avatarUrl =
+                        String.format("file:///android_asset/flutter_assets/%s", avatarUrl)
+                }
+                val headers =
+                    data.getSerializable(CallkitConstants.EXTRA_CALLKIT_HEADERS) as HashMap<String, Any?>
+                if (targetOnGoingAvatarCustom == null) targetOnGoingAvatarCustom =
+                    createOnGoingAvatarTargetCustom(onGoingNotificationId, true)
+
+                ImageLoaderProvider.loadImage(
+                    context,
+                    avatarUrl,
+                    headers,
+                    targetOnGoingAvatarCustom
+                )
+            }
+        } else {
+            notificationOngoingViews =
+                RemoteViews(context.packageName, R.layout.layout_custom_ongoing_notification)
+            notificationOngoingSmallViews = RemoteViews(
+                context.packageName, R.layout.layout_custom_small_ongoing_notification
+            )
+
+            notificationOngoingViews?.setTextViewText(
+                R.id.tvNameCaller,
+                data.getString(CallkitConstants.EXTRA_CALLKIT_NAME_CALLER, "")
+            )
+            notificationOngoingSmallViews?.setTextViewText(
+                R.id.tvNameCaller,
+                data.getString(CallkitConstants.EXTRA_CALLKIT_NAME_CALLER, "")
+            )
+            val isShowCallID =
+                data.getBoolean(CallkitConstants.EXTRA_CALLKIT_IS_SHOW_CALL_ID, false)
+            if (isShowCallID) {
+                notificationOngoingViews?.setTextViewText(
+                    R.id.tvNumber, data.getString(CallkitConstants.EXTRA_CALLKIT_HANDLE, "")
+                )
+                notificationOngoingSmallViews?.setTextViewText(
+                    R.id.tvNumber, data.getString(CallkitConstants.EXTRA_CALLKIT_HANDLE, "")
+                )
+            }
+            notificationOngoingViews?.setOnClickPendingIntent(
+                R.id.llHangup, getHangupPendingIntent(onGoingNotificationId, data)
+            )
+            val isShowHangup = data.getBoolean(
+                CallkitConstants.EXTRA_CALLKIT_CALLING_HANG_UP_SHOW, true
+            )
+            notificationOngoingViews?.setViewVisibility(
+                R.id.llHangup, if (isShowHangup) View.VISIBLE else View.GONE
+            )
+
+            val textHangup =
+                data.getString(CallkitConstants.EXTRA_CALLKIT_CALLING_HANG_UP_TEXT, "")
+            notificationOngoingViews?.setTextViewText(
+                R.id.tvHangUp,
+                if (TextUtils.isEmpty(textHangup)) context.getString(R.string.text_hang_up) else textHangup
+            )
+
+            // --- START: add mic button wiring and background color support ---
+            try {
+                // set background color if provided (AndroidParams.backgroundColor)
+                val androidBundle = data.getBundle(CallkitConstants.EXTRA_CALLKIT_ANDROID)
+                val bgColorHex =
+                    androidBundle?.getString(CallkitConstants.EXTRA_CALLKIT_BACKGROUND_COLOR)
+                        ?: data.getString(CallkitConstants.EXTRA_CALLKIT_BACKGROUND_COLOR, null)
+                val bgColorString =
+                    if (!bgColorHex.isNullOrEmpty()) bgColorHex else "#E8459E" // fallback to provided hot-pink
+                try {
+                    val colorInt = Color.parseColor(bgColorString)
+                    notificationOngoingViews?.setInt(
+                        R.id.rootLayout,
+                        "setBackgroundColor",
+                        colorInt
+                    )
+                    notificationOngoingSmallViews?.setInt(
+                        R.id.rootLayout,
+                        "setBackgroundColor",
+                        colorInt
+                    )
+                } catch (ex: Exception) {
+                    // ignore parse errors
+                }
 
                 // PendingIntent for toggle mute
                 val toggleIntent = CallkitIncomingBroadcastReceiver.getIntent(
@@ -660,193 +771,32 @@ class CallkitNotificationManager(
                     toggleIntent,
                     getFlagPendingIntent()
                 )
-
-                // 🔽 Add this mute button here
-                val muteAction: NotificationCompat.Action = NotificationCompat.Action.Builder(
-                    R.drawable.ic_mic_white, // or transparent icon if needed
-                    context.getString(R.string.text_mute), // or "Mute" directly
+                notificationOngoingViews?.setOnClickPendingIntent(R.id.ivMic, togglePending)
+                notificationOngoingSmallViews?.setOnClickPendingIntent(
+                    R.id.ivMic,
                     togglePending
-                ).build()
-                notificationOngoingBuilder?.addAction(muteAction)
-
-                val isShowCallID =
-                    data.getBoolean(CallkitConstants.EXTRA_CALLKIT_IS_SHOW_CALL_ID, false)
-                if (isShowCallID) {
-                    notificationOngoingBuilder?.setContentText(
-                        data.getString(
-                            CallkitConstants.EXTRA_CALLKIT_HANDLE, ""
-                        )
-                    )
-                }
-                var avatarUrl = data.getString(CallkitConstants.EXTRA_CALLKIT_AVATAR, "")
-                if (!avatarUrl.isNullOrEmpty()) {
-                    if (!avatarUrl.startsWith("http://", true) && !avatarUrl.startsWith(
-                            "https://",
-                            true
-                        )
-                    ) {
-                        avatarUrl =
-                            String.format("file:///android_asset/flutter_assets/%s", avatarUrl)
-                    }
-                    val headers =
-                        data.getSerializable(CallkitConstants.EXTRA_CALLKIT_HEADERS) as HashMap<String, Any?>
-                    if (targetOnGoingAvatarCustom == null) targetOnGoingAvatarCustom =
-                        createOnGoingAvatarTargetCustom(onGoingNotificationId, true)
-
-                    ImageLoaderProvider.loadImage(
-                        context,
-                        avatarUrl,
-                        headers,
-                        targetOnGoingAvatarCustom
-                    )
-                }
-            } else {
-                notificationOngoingViews =
-                    RemoteViews(context.packageName, R.layout.layout_custom_ongoing_notification)
-                notificationOngoingSmallViews = RemoteViews(
-                    context.packageName, R.layout.layout_custom_small_ongoing_notification
                 )
 
-                notificationOngoingViews?.setTextViewText(
-                    R.id.tvNameCaller,
-                    data.getString(CallkitConstants.EXTRA_CALLKIT_NAME_CALLER, "")
+                // Set mic icon based on persisted mute state (SharedPreferences)
+                val callId = data.getString(
+                    CallkitConstants.EXTRA_CALLKIT_CALLING_ID,
+                    data.getString(CallkitConstants.EXTRA_CALLKIT_ID, "callkit_incoming")
                 )
-                notificationOngoingSmallViews?.setTextViewText(
-                    R.id.tvNameCaller,
-                    data.getString(CallkitConstants.EXTRA_CALLKIT_NAME_CALLER, "")
+                val prefs = context.getSharedPreferences("CallKitPrefs", Context.MODE_PRIVATE)
+                val isMuted = prefs.getBoolean("muted_${callId}", false)
+                val micRes =
+                    if (isMuted) R.drawable.ic_mic_off_white else R.drawable.ic_mic_white
+                notificationOngoingViews?.setImageViewResource(R.id.ivMic, micRes)
+                notificationOngoingSmallViews?.setImageViewResource(R.id.ivMic, micRes)
+            } catch (e: Exception) {
+                // don't crash for devices
+                Log.e(
+                    "CallkitNotificationManager",
+                    "Error wiring mic/background: ${e.message}",
+                    e
                 )
-                val isShowCallID =
-                    data.getBoolean(CallkitConstants.EXTRA_CALLKIT_IS_SHOW_CALL_ID, false)
-                if (isShowCallID) {
-                    notificationOngoingViews?.setTextViewText(
-                        R.id.tvNumber, data.getString(CallkitConstants.EXTRA_CALLKIT_HANDLE, "")
-                    )
-                    notificationOngoingSmallViews?.setTextViewText(
-                        R.id.tvNumber, data.getString(CallkitConstants.EXTRA_CALLKIT_HANDLE, "")
-                    )
-                }
-                notificationOngoingViews?.setOnClickPendingIntent(
-                    R.id.llHangup, getHangupPendingIntent(onGoingNotificationId, data)
-                )
-                val isShowHangup = data.getBoolean(
-                    CallkitConstants.EXTRA_CALLKIT_CALLING_HANG_UP_SHOW, true
-                )
-                notificationOngoingViews?.setViewVisibility(
-                    R.id.llHangup, if (isShowHangup) View.VISIBLE else View.GONE
-                )
-
-                val textHangup =
-                    data.getString(CallkitConstants.EXTRA_CALLKIT_CALLING_HANG_UP_TEXT, "")
-                notificationOngoingViews?.setTextViewText(
-                    R.id.tvHangUp,
-                    if (TextUtils.isEmpty(textHangup)) context.getString(R.string.text_hang_up) else textHangup
-                )
-
-                // --- START: add mic button wiring and background color support ---
-                try {
-                    // set background color if provided (AndroidParams.backgroundColor)
-                    val androidBundle = data.getBundle(CallkitConstants.EXTRA_CALLKIT_ANDROID)
-                    val bgColorHex =
-                        androidBundle?.getString(CallkitConstants.EXTRA_CALLKIT_BACKGROUND_COLOR)
-                            ?: data.getString(CallkitConstants.EXTRA_CALLKIT_BACKGROUND_COLOR, null)
-                    val bgColorString =
-                        if (!bgColorHex.isNullOrEmpty()) bgColorHex else "#E8459E" // fallback to provided hot-pink
-                    try {
-                        val colorInt = Color.parseColor(bgColorString)
-                        notificationOngoingViews?.setInt(
-                            R.id.rootLayout,
-                            "setBackgroundColor",
-                            colorInt
-                        )
-                        notificationOngoingSmallViews?.setInt(
-                            R.id.rootLayout,
-                            "setBackgroundColor",
-                            colorInt
-                        )
-                    } catch (ex: Exception) {
-                        // ignore parse errors
-                    }
-
-                    // PendingIntent for toggle mute
-                    val toggleIntent = CallkitIncomingBroadcastReceiver.getIntent(
-                        context,
-                        CallkitConstants.ACTION_CALL_TOGGLE_MUTE,
-                        data
-                    )
-                    val togglePending = PendingIntent.getBroadcast(
-                        context,
-                        onGoingNotificationId + 1000,
-                        toggleIntent,
-                        getFlagPendingIntent()
-                    )
-                    notificationOngoingViews?.setOnClickPendingIntent(R.id.ivMic, togglePending)
-                    notificationOngoingSmallViews?.setOnClickPendingIntent(
-                        R.id.ivMic,
-                        togglePending
-                    )
-
-                    // Set mic icon based on persisted mute state (SharedPreferences)
-                    val callId = data.getString(
-                        CallkitConstants.EXTRA_CALLKIT_CALLING_ID,
-                        data.getString(CallkitConstants.EXTRA_CALLKIT_ID, "callkit_incoming")
-                    )
-                    val prefs = context.getSharedPreferences("CallKitPrefs", Context.MODE_PRIVATE)
-                    val isMuted = prefs.getBoolean("muted_${callId}", false)
-                    val micRes =
-                        if (isMuted) R.drawable.ic_mic_off_white else R.drawable.ic_mic_white
-                    notificationOngoingViews?.setImageViewResource(R.id.ivMic, micRes)
-                    notificationOngoingSmallViews?.setImageViewResource(R.id.ivMic, micRes)
-                } catch (e: Exception) {
-                    // don't crash for devices
-                    Log.e(
-                        "CallkitNotificationManager",
-                        "Error wiring mic/background: ${e.message}",
-                        e
-                    )
-                }
-// --- END ---
-
-
-                var avatarUrl = data.getString(CallkitConstants.EXTRA_CALLKIT_AVATAR, "")
-                if (!avatarUrl.isNullOrEmpty()) {
-                    if (!avatarUrl.startsWith("http://", true) && !avatarUrl.startsWith(
-                            "https://",
-                            true
-                        )
-                    ) {
-                        avatarUrl =
-                            String.format("file:///android_asset/flutter_assets/%s", avatarUrl)
-                    }
-                    val headers =
-                        data.getSerializable(CallkitConstants.EXTRA_CALLKIT_HEADERS) as HashMap<String, Any?>
-
-                    if (targetOnGoingAvatarCustom == null) targetOnGoingAvatarCustom =
-                        createOnGoingAvatarTargetCustom(onGoingNotificationId, false)
-
-                    ImageLoaderProvider.loadImage(
-                        context,
-                        avatarUrl,
-                        headers,
-                        targetOnGoingAvatarCustom
-                    )
-
-                }
-                notificationOngoingBuilder?.setStyle(NotificationCompat.DecoratedCustomViewStyle())
-                notificationOngoingBuilder?.setCustomContentView(notificationOngoingSmallViews)
-                notificationOngoingBuilder?.setCustomBigContentView(notificationOngoingViews)
-                    ?.setSmallIcon(R.drawable.logo_notif)
             }
-        } else {
-            notificationOngoingBuilder?.setContentTitle(
-                data.getString(
-                    CallkitConstants.EXTRA_CALLKIT_NAME_CALLER, ""
-                )
-            )
-            notificationOngoingBuilder?.setContentText(
-                data.getString(
-                    CallkitConstants.EXTRA_CALLKIT_HANDLE, ""
-                )
-            )?.setSmallIcon(R.drawable.logo_notif)
+// --- END ---
 
             var avatarUrl = data.getString(CallkitConstants.EXTRA_CALLKIT_AVATAR, "")
             if (!avatarUrl.isNullOrEmpty()) {
@@ -855,41 +805,31 @@ class CallkitNotificationManager(
                         true
                     )
                 ) {
-                    avatarUrl = String.format("file:///android_asset/flutter_assets/%s", avatarUrl)
+                    avatarUrl =
+                        String.format("file:///android_asset/flutter_assets/%s", avatarUrl)
                 }
                 val headers =
                     data.getSerializable(CallkitConstants.EXTRA_CALLKIT_HEADERS) as HashMap<String, Any?>
 
-
-                if (targetOnGoingAvatarDefault == null) targetOnGoingAvatarDefault =
-                    createOnGoingAvatarTargetDefault(onGoingNotificationId)
+                if (targetOnGoingAvatarCustom == null) targetOnGoingAvatarCustom =
+                    createOnGoingAvatarTargetCustom(onGoingNotificationId, false)
 
                 ImageLoaderProvider.loadImage(
                     context,
                     avatarUrl,
                     headers,
-                    targetOnGoingAvatarDefault
+                    targetOnGoingAvatarCustom
                 )
+
             }
-            val isShowHangup = data.getBoolean(
-                CallkitConstants.EXTRA_CALLKIT_CALLING_HANG_UP_SHOW, true
-            )
-            if (isShowHangup) {
-                val textHangup =
-                    data.getString(CallkitConstants.EXTRA_CALLKIT_CALLING_HANG_UP_TEXT, "")
-                val hangUpAction: NotificationCompat.Action = NotificationCompat.Action.Builder(
-                    R.drawable.transparent,
-                    if (TextUtils.isEmpty(textHangup)) context.getString(R.string.text_hang_up) else textHangup,
-                    getHangupPendingIntent(onGoingNotificationId, data)
-                ).build()
-                notificationOngoingBuilder?.addAction(hangUpAction)
-            }
+            notificationOngoingBuilder?.setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            notificationOngoingBuilder?.setCustomContentView(notificationOngoingSmallViews)
+            notificationOngoingBuilder?.setCustomBigContentView(notificationOngoingViews)
+                ?.setSmallIcon(R.drawable.logo_notif)
         }
-        notificationOngoingBuilder?.priority = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            NotificationManager.IMPORTANCE_HIGH
-        } else {
-            Notification.PRIORITY_HIGH
-        }
+
+        notificationOngoingBuilder?.priority = NotificationCompat.PRIORITY_LOW
+
         if (isConnected == true) {
             notificationOngoingBuilder?.setWhen(System.currentTimeMillis())
             notificationOngoingBuilder?.setUsesChronometer(true)
@@ -904,6 +844,7 @@ class CallkitNotificationManager(
         )
 
         notificationOngoingBuilder?.setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+        notificationOngoingBuilder?.setOnlyAlertOnce(true)
 
         val actionColor = data.getString(CallkitConstants.EXTRA_CALLKIT_ACTION_COLOR, "#E8459E")
         try {
@@ -911,30 +852,34 @@ class CallkitNotificationManager(
         } catch (_: Exception) {
         }
         notificationOngoingBuilder?.setOngoing(true)
+
+        val resolvedSmallIcon =
+            resolveAppIconResource(context.applicationContext, "logo_notif", "ic_launcher")
+        notificationOngoingBuilder?.setSmallIcon(resolvedSmallIcon)
+
         val notification = notificationOngoingBuilder?.build()
 
         return notification?.let { CallkitNotification(onGoingNotificationId, it) }
     }
 
     // Resolve preferred icon name (first try logo_notif then fallback to ic_launcher mipmap)
-    fun resolveAppIconResource(context: Context, iconName: String, defaultMipmapName: String): Int {
-        // look in drawable first, then mipmap
+    fun resolveAppIconResource(
+        context: Context,
+        iconName: String,
+        defaultDrawableName: String
+    ): Int {
+        // look in drawable only
         val drawableId = context.resources.getIdentifier(iconName, "drawable", context.packageName)
         if (drawableId != 0) return drawableId
-        val mipmapId = context.resources.getIdentifier(iconName, "mipmap", context.packageName)
-        if (mipmapId != 0) return mipmapId
-        // fallback to default launcher mipmap
+
+        // fallback to default drawable
         val defaultId =
-            context.resources.getIdentifier(defaultMipmapName, "mipmap", context.packageName)
+            context.resources.getIdentifier(defaultDrawableName, "drawable", context.packageName)
         if (defaultId != 0) return defaultId
+
         // absolute fallback to application icon
         return context.applicationInfo.icon
     }
-
-    // usage: prefer "logo_notif" (or "ic_call" — whatever you put in your app resources)
-    val resolvedSmallIcon =
-        resolveAppIconResource(context.applicationContext, "logo_notif", "ic_launcher")
-    notificationOngoingBuilder?.setSmallIcon(resolvedSmallIcon)
 
 
     fun clearIncomingNotification(data: Bundle, isAccepted: Boolean) {
@@ -1031,11 +976,13 @@ class CallkitNotificationManager(
                 val channelOngoingCall = NotificationChannel(
                     NOTIFICATION_CHANNEL_ID_ONGOING,
                     ongoingCallChannelName,
-                    NotificationManager.IMPORTANCE_HIGH // disables notification popup for ongoing call
+                    NotificationManager.IMPORTANCE_DEFAULT // disables notification popup for ongoing call
                 ).apply {
-                    description = "P2P Call with RaZe — I/O"
+                    description = "P2P Call with RaZe-IO"
                     lightColor = Color.parseColor("#E8459E")
                     enableLights(true)
+                    enableVibration(true)
+                    setSound(null, null)
                 }
                 createNotificationChannel(channelOngoingCall)
             }
